@@ -1,0 +1,84 @@
+#!/bin/bash
+
+# ================= 配置区域 =================
+# 1. 输入数据的文件夹 (上一步生成的文件夹)
+INPUT_DIR="1.sumstats"
+
+# 2. 输出结果的文件夹 【脚本会自动创建】
+OUTPUT_DIR="2.h2"
+
+# 3. ldsc.py 的绝对路径
+LDSC_SCRIPT="/home/chenguanglei2011/ldsc/ldsc.py"
+
+# 4. LD 参考数据的目录 (注意末尾加上 /)
+REF_LD_CHR="/home/chenguanglei2011/ldsc/eur_w_ld_chr/"
+W_LD_CHR="/home/chenguanglei2011/ldsc/eur_w_ld_chr/"
+# ===========================================
+
+# 检查输入目录
+if [ ! -d "$INPUT_DIR" ]; then
+    echo "错误: 找不到输入目录 $INPUT_DIR"
+    exit 1
+fi
+
+# 检查脚本
+if [ ! -f "$LDSC_SCRIPT" ]; then
+    echo "错误: 找不到脚本文件 $LDSC_SCRIPT"
+    exit 1
+fi
+
+# 创建输出目录
+if [ ! -d "$OUTPUT_DIR" ]; then
+    echo "创建输出目录: $OUTPUT_DIR"
+    mkdir -p "$OUTPUT_DIR"
+fi
+
+echo "开始批量计算遗传度 (h2)..."
+
+# 循环读取 .sumstats.gz 文件
+for file in "$INPUT_DIR"/*.sumstats.gz; do
+    # 检查文件是否存在
+    [ -e "$file" ] || continue
+
+    # 1. 提取文件名 (例如: Fin_ABC.sumstats.gz)
+    filename=$(basename "$file")
+    
+    # 2. 提取前缀 (去掉 .sumstats.gz，得到 Fin_ABC)
+    prefix="${filename%.sumstats.gz}"
+    
+    # 3. 定义输出名前缀 (例如: 2.h2/Fin_ABC_h2)
+    # LDSC 运行时会自动添加 .log 后缀
+    out_prefix="$OUTPUT_DIR/${prefix}_h2"
+    expected_log="${out_prefix}.log"
+
+    # ==================================================
+    # 4. 断点续传 (优化版)
+    # ==================================================
+    # 使用 -s 参数检查日志文件是否存在且大小大于0
+    # 这能防止因为上次运行出错产生空日志而被错误跳过
+    if [ -s "$expected_log" ]; then
+        echo ">>> [跳过] 结果已存在且完整: $expected_log"
+        continue
+    fi
+    # ==================================================
+
+    echo "=================================================="
+    echo "正在处理: $prefix"
+    
+    # 5. 执行 ldsc.py --h2
+    python "$LDSC_SCRIPT" \
+        --h2 "$file" \
+        --ref-ld-chr "$REF_LD_CHR" \
+        --w-ld-chr "$W_LD_CHR" \
+        --out "$out_prefix"
+
+    # 检查结果
+    if [ -s "$expected_log" ]; then
+        echo "✔ 完成日志生成: $expected_log"
+    else
+        echo "✘ 可能失败，未找到日志文件或文件为空"
+    fi
+
+done
+
+echo "所有遗传度计算任务完成！结果位于 $OUTPUT_DIR"
