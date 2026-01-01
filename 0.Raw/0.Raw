@@ -1,0 +1,27 @@
+The input raw data files (e.g., .txt) must be space or tab-delimited and include the following mandatory columns. The column headers should match the names below:
+
+SNP: Variant ID (e.g., rs12345)
+
+chr: Chromosome (e.g., 1 )
+
+pos: Base pair position (e.g., hg38 or hg19)
+
+effect_allele: Effect allele
+
+other_allele: Other allele
+
+eaf: Effect allele frequency
+
+beta: Effect size
+
+se: Standard error
+
+pval: P-value
+
+samplesize: Sample size (N)
+
+Example Format:
+
+SNP         chr   pos       effect_allele  other_allele  eaf    beta    se     pval       samplesize
+rs1001      1     10500     A              G             0.15   0.02    0.005  1.5e-08    100000
+rs1002      1     10600     T              C             0.85   -0.05   0.01   0.04       100000
